@@ -7,6 +7,9 @@
 
 #include <unistd.h>
 
+#include <iostream>
+#include <cstdlib>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -70,20 +73,54 @@ int main(void){
 
 
 
-
-
-
-
-void work(int sc){
+void work(int sc)
+{
+    int len;
+    char buf[BUFSIZ];
+    FILE* pipe;
+    
+    
+    while(((len = read(sc, buf, sizeof(buf) - 1)) > 0)&&(buf[0] != 0)); //0 == quit
+    {
+        buf[len] = '\0';
+        
+        if(strncmp (buf, "cd", 2)==0)
+        {
+            buf[0] = " ";
+            buf[1] = " ";
+            
+            int res = chdir(buf);
+	        if (res == 0) 
+	        {
+		        printf("chdir is success\n");
+	        }
+            //почему-то cd не работает с помощью нижеследующего способа
+            //нужно использовать chdir
+        }
+        else
+        {
+            if((pipe = popen("buf", "r")) == NULL)
+			    perror("=(\n");
+			    
+			while (fgets (buf, BUFSIZ, pipe) != NULL)
+		        write(sc, buf, sizeof(buf));
+		        
+		    pclose(pipe);
+        }
+    }
+    /*    
     int len;
     char buf[512+1];
     len = read(sc, buf, sizeof(buf) - 1);
     printf("read[%d] of %ld\n", len, sizeof(buf) - 1);
-    if(len > 0){
+    if(len > 0)
+    {
         buf[len] = '\0';
         printf("<%s>\n", buf);
     }
 
     len = write(sc, "THank you", 10);
     printf("write: %d of %d\n", len, 10 );
+    */
+
 }
