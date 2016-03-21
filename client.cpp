@@ -7,6 +7,9 @@
 
 #include <unistd.h>
 
+#include <iostream>
+#include <cstdlib>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -57,7 +60,30 @@ int main(void)
     return 0;
 }
 
-void work(int s) {
+
+
+void work(int s)
+{
+    int len;
+    char buf[BUFSIZ];
+    
+    
+    while(true)
+    {
+        std::cin >> buf;
+        len = write(s, buf, sizeof(buf));
+        
+        if(buf[0] == '0') //0 == quit
+            break;
+        
+        while((len = read(sc, buf, sizeof(buf) - 1)) > 0)
+        {
+            buf[len]= '\0';
+            
+            std::cout << "From Server: " << buf << "\n";
+        }
+    }
+    /*
     int len;
     char buf[512+1];
     len = write(s, "Hello",10);
@@ -69,4 +95,5 @@ void work(int s) {
         buf[len]= '\0';
         printf("<%s>\n",buf);
     }
+    */
 }
