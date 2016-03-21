@@ -86,8 +86,8 @@ void work(int sc)
         
         if(strncmp (buf, "cd", 2)==0)
         {
-            buf[0] = " ";
-            buf[1] = " ";
+            buf[0] = ' ';
+            buf[1] = ' ';
             
             int res = chdir(buf);
 	        if (res == 0) 
