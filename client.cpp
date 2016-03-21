@@ -76,7 +76,7 @@ void work(int s)
         if(buf[0] == '0') //0 == quit
             break;
         
-        while((len = read(sc, buf, sizeof(buf) - 1)) > 0)
+        while((len = read(s, buf, sizeof(buf) - 1)) > 0)
         {
             buf[len]= '\0';
             
