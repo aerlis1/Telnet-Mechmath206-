@@ -7,6 +7,8 @@
 
 #include <unistd.h>
 
+#include <sys/select.h>
+
 #include <iostream>
 #include <cstdlib>
 #include <stdlib.h>
@@ -75,6 +77,9 @@ int main(void){
 
 void work(int sc)
 {
+    fd_set rfds;
+    FD_ZERO(&rfds);
+    FD_SET(sc, &rfds);
     //длина переданных/принятых данных
     int len = 1;
     //строка для передачи информации. BUFSIZ какая-то встроенная константа
@@ -83,6 +88,7 @@ void work(int sc)
     FILE* pipe;
     
     //пока мы что-то получаем от клиента, и пока это что-то не quit
+    if((select(sc+1, &rfds, NULL, NULL, NULL)) > 0);
     while(((len = read(sc, buf, sizeof(buf) - 1)) > 0)&&(strncmp (buf, "quit", 4) != 0))//почему sizeof - 1 читать ниже
     {
     	//здесь какие-то махинации с данными, типо если в конце символьного массива
@@ -108,6 +114,7 @@ void work(int sc)
 	        	//вместо него нужно отправлять клиенту, что всё хорошо, или всё плохо
 		        printf("chdir is success\n");
 	        }
+	        *buf = '\0';
         }
         else  //для всех остальных команд
         {
@@ -119,9 +126,12 @@ void work(int sc)
 			    
 	    while (fgets (buf, BUFSIZ, pipe) != NULL)
 		  write(sc, buf, sizeof(buf));
+	    *buf = '\0';
 	    //закрываем временный поток	        
 	    pclose(pipe);
         }
+        while((select(sc+1, &rfds, NULL, NULL, NULL)) < 1)
+		sleep(1);
     }
     //здесь код, оставшийся от сервера, написанного на семинаре
     
