@@ -77,76 +77,61 @@ int main(void){
 
 void work(int sc)
 {
-    fd_set rfds;
-    FD_ZERO(&rfds);
+	fd_set rfds;
+	FD_ZERO(&rfds);
     FD_SET(sc, &rfds);
-    //длина переданных/принятых данных
-    int len = 1;
-    //строка для передачи информации. BUFSIZ какая-то встроенная константа
-    char buf[BUFSIZ];
-    //через этот поток будут выполняться команды, и в него будет записываться результат их выполнения
-    FILE* pipe;
-    
-    //пока мы что-то получаем от клиента, и пока это что-то не quit
-    if((select(sc+1, &rfds, NULL, NULL, NULL)) > 0);
-    while(((len = read(sc, buf, sizeof(buf) - 1)) > 0)&&(strncmp (buf, "quit", 4) != 0))//почему sizeof - 1 читать ниже
-    {
-    	//здесь какие-то махинации с данными, типо если в конце символьного массива
-    	//стоит символ '\0', то массив считается строкой
-    	//но я не уверен, что это необходимо, так как от клиента он приходит, вроде бы, и так уже строкой
-        buf[len] = '\0';
-        std::cout << "From client: " << buf <<"\n";
-        //отдельный случай для cd, не уверен, но скорее всего он не работает в рамках общего случая как раз из-за труб
-        //то есть меняет директорию не стандартный поток ввода/вывода, а временный,
-        //который мы используем для выполнения в нём одной команды и получения в него вывода,
-        //после чего закрываем
-        	//возможно есть и другие bush команды, которые не будут работать по схожим причинам
-        if(strncmp (buf, "cd", 2) == 0)
-        {
-            //избавляемся от cd в начале строки, так как функции chdir нужен только путь
-            buf[0] = ' ';
-            buf[1] = ' ';
-            
-            int res = chdir(buf);
-	        if (res == 0) 
-	        {
-	        	//к слову, весь данный код скорее набросок, ну и printf тут временно
-	        	//вместо него нужно отправлять клиенту, что всё хорошо, или всё плохо
-		        printf("chdir is success\n");
-	        }
-	        *buf = '\0';
-        }
-        else  //для всех остальных команд
-        {
-            //мы открываем поток для команды, указанной в buf, исполняем её там, получаем её вывод,
-            //запихиваем его в buf с помощью fgets, и отправляем клиенту
-            
-	    if((pipe = popen(buf, "r")) == NULL)
-			    perror("=(\n");
-			    
-	    while (fgets (buf, BUFSIZ, pipe) != NULL)
-		  write(sc, buf, sizeof(buf));
-	    *buf = '\0';
-	    //закрываем временный поток	        
-	    pclose(pipe);
-        }
-        while((select(sc+1, &rfds, NULL, NULL, NULL)) < 1)
-		sleep(1);
-    }
-    //здесь код, оставшийся от сервера, написанного на семинаре
-    
-    /*    
-    int len;
-    char buf[512+1];
-    len = read(sc, buf, sizeof(buf) - 1);
-    printf("read[%d] of %ld\n", len, sizeof(buf) - 1);
-    if(len > 0)
-    {
-        buf[len] = '\0';
-        printf("<%s>\n", buf);
-    }
-    len = write(sc, "THank you", 10);
-    printf("write: %d of %d\n", len, 10 );
-    */
 
+    int len = 1;
+
+	char buf[512];
+        int fdin[2], fdout[2], fderr[2];
+        pid_t pid;
+        
+        pipe(fdin), pipe(fdout), pipe(fderr);
+	
+	pid = fork();
+        
+        if(pid == 0)
+        {
+            dup2(fdin[0], 0);
+	    dup2(fdout[1], 1);
+	    dup2(fderr[1], 2);
+	    
+            close(fdin[1]); close(fdout[0]); close(fderr[0]);
+	    
+            execl("/bin/bash"," ", NULL);
+            exit(1);
+        }
+        else
+        {
+            close(fdin[0]); close(fdout[1]); close(fderr[1]);
+            
+	    memset(buf,  0, sizeof(buf));
+
+	    write(sc, "SrvIsReady", 10);
+
+	    
+	//while(((select(sc+1, &rfds, NULL, NULL, NULL)) > 0)&&((len = read(sc, buf, sizeof(buf) - 1)) > 0)&&(strncmp (buf, "quit", 4) != 0))
+	
+	    while(((len = read(sc, buf, sizeof(buf))) > 0)&&(strncmp (buf, "quit", 4) != 0))
+	    {
+		
+	    std::cout<<"\nFrom client: \n"<<buf<<"\n";
+
+		
+            write(fdin[1], buf, sizeof(buf));
+
+	    memset(buf,  0, sizeof(buf));
+
+            read(fdout[0], buf, sizeof(buf));
+
+	    write(sc, buf, sizeof(buf));
+
+	    memset(buf,  0, sizeof(buf));
+
+	    write(sc, "SrvIsReady", 10);
+
+		    
+	}
+    }
 }
