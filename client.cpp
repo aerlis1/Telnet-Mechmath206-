@@ -64,31 +64,45 @@ int main(void)
 
 void work(int s)
 {
+    fd_set rfds;
+    FD_ZERO(&rfds);
+    FD_SET(s, &rfds);
     //длина переданных/принятых данных
     int len;
     //строка для передачи информации. BUFSIZ какая-то встроенная константа
-    char buf[BUFSIZ];
+    char buf[512];
     
     //пока не брейкнемся
     while(true)
     {
+	    while((select(s+1, &rfds, NULL, NULL, NULL)) < 1)
+		sleep(1);
+	    len =  read(s, buf, sizeof(buf));
+	     buf[len]= '\0';
+	    if(strncmp (buf, "SrvIsReady", 10)==0)
+	    {
+		 memset(buf,  0, sizeof(buf));
         //кидаем в buf то, что хотим отправить
-        fgets (buf, BUFSIZ, stdin);
-	std::cout<<"We seid: "<<buf<<"\n";
+        fgets (buf, sizeof(buf), stdin);
+	std::cout<<"We said: "<<buf<<"\n";
         //отправляем серверу, попутно узнавая длину отправленного (хз зачем, можно и не узнавать)
         len = write(s, buf, sizeof(buf));
-	//std::cout<<"len: "<< len << "\n";
-	*buf = '\0';
+	std::cout<<"len: "<< len << "\n";
+	
         //если решили выйти, брейкаемся (а серверу мы об этом сообщили в предыдущей строчке)
         if(strncmp (buf, "quit", 4)==0)
             break;
+	
+	memset(buf,  0, sizeof(buf));
         //пока от сервера что-то приходит - читаем
+	while((select(s+1, &rfds, NULL, NULL, NULL)) < 1)
+		sleep(1);
         len = read(s, buf, sizeof(buf) - 1);
-            //махинации с буфером (о них написано в комментах к серверу)
-            buf[len]= '\0';
-            //выводим на экран то, что получили от сервера
+
             std::cout << "From Server: " << buf << "\n";
-	    *buf = '\0';
-            //вообще говоря, наверное где-то здесь буфер надо чистить (и, наверное, не только здесь)
+	    
+	    memset(buf,  0, sizeof(buf));
+
+	    }
     }
 }
