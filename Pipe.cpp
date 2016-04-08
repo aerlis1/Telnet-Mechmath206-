@@ -20,32 +20,26 @@ int main()
         
         if(pid == 0)
         {
-                //исправил перенаправление оставшихся потоков
-                //теперь вроде всё работает
             dup2(fdin[0], 0);
 	    dup2(1, fdout[1]);
 	    dup2(2, fderr[1]);
 	    
-            close(fdin[1]);
-            close(fdout[0]); close(fderr[0]);
+            close(fdin[1]); close(fdout[0]); close(fderr[0]);
 	    
             execl("/bin/bash"," ", NULL);
             exit(1);
         }
         else
         {
-            close(fdin[0]); 
-            close(fdout[1]); close(fderr[1]);
+            close(fdin[0]); close(fdout[1]); close(fderr[1]);
             
-            //не смог сделать так, чтобы выполняло то, что мы кладём в буфер
-            //там видимо какая-то хрень со строками и символьными массивами
-            //так что пока что выполняется только то, что пишем в кавычках вручную
-            
-            //std::cin>>buf;
+	    memset(buf,  0, sizeof(buf));
 
-           //write(fdin[1], buf, sizeof(buf));
+	    fgets(buf, sizeof(buf), stdin);
+	    
+	    
+            write(fdin[1], buf, sizeof(buf));
             
-	    write(fdin[1],"ls -l\n",7);
             read(fdout[0], buf, sizeof(buf));
             std::cout<<"\nOur result: \n"<<buf<<"\n";
         }
