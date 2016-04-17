@@ -1,5 +1,4 @@
 
-
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -43,42 +42,39 @@ close(s);
 printf("Connection has losted\n");
 return 0;
 }
+
 void work(int s)
 {
-fd_set rfds;
-FD_ZERO(&rfds);
-FD_SET(s, &rfds);
-//длина переданных/принятых данных
-int len;
-//строка для передачи информации. BUFSIZ какая-то встроенная константа
-char buf[512];
-//пока не брейкнемся
-while(true)
-{
-while((select(s+1, &rfds, NULL, NULL, NULL)) < 1)
-sleep(1);
-len = read(s, buf, sizeof(buf));
-buf[len]= '\0';
-if(strncmp (buf, "SrvIsReady", 10)==0)
-{
-    std::cout<<"we here\n";
-memset(buf, 0, sizeof(buf));
-//кидаем в buf то, что хотим отправить
-fgets (buf, sizeof(buf), stdin);
-std::cout<<"We said: "<<buf<<"\n";
-//отправляем серверу, попутно узнавая длину отправленного (хз зачем, можно и не узнавать)
-len = write(s, buf, sizeof(buf));
-std::cout<<"len: "<< len << "\n";
-//если решили выйти, брейкаемся (а серверу мы об этом сообщили в предыдущей строчке)
-if(strncmp (buf, "quit", 4)==0)
-break;
-memset(buf, 0, sizeof(buf));
-//пока от сервера что-то приходит - читаем
-//while((select(s+1, &rfds, NULL, NULL, NULL)) < 1)
-//sleep(1);
-len = read(s, buf, sizeof(buf));
-std::cout << "From Server: " << buf << "\n";
-memset(buf, 0, sizeof(buf));
-}
-}
+        fd_set rfds;
+        FD_ZERO(&rfds);
+        FD_SET(s, &rfds);
+
+        //int len;
+
+        char buf[512];
+
+        while(true)
+        {
+
+               read(s, buf, sizeof(buf));
+
+                if(strncmp (buf, "SrvIsReady", 10)==0)
+                {
+
+                        memset(buf, 0, sizeof(buf));
+
+                        fgets (buf, sizeof(buf), stdin);
+                        write(s, buf, sizeof(buf));
+
+                        if(strncmp (buf, "quit", 4)==0)
+                        break;
+                        
+                        memset(buf, 0, sizeof(buf));
+
+                        read(s, buf, sizeof(buf));
+                        std::cout << "From Server:\n\n" << buf << "\n\n";
+                        
+                        memset(buf, 0, sizeof(buf));
+                }
+        }
 }
